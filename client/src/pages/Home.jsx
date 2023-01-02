@@ -3,12 +3,25 @@ import { Box } from "@mui/system";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import boardApi from "../api/boardApi";
+import { setBoards } from "../redux/features/boardSlice";
 const Home = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
 
-  const createBoard = () => {};
+  const createBoard = async () => {
+    setLoading(true);
+    try {
+      const res = await boardApi.create();
+      dispatch(setBoards([res]));
+      navigate(`/boards/${res.id}`);
+    } catch (error) {
+      alert(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
