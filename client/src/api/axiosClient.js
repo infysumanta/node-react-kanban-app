@@ -1,13 +1,16 @@
 import axios from "axios";
 import queryString from "query-string";
 
-const baseUrl = "http://localhost:5000/api/v1";
-
+const baseUrl = "http://127.0.0.1:5000/api/v1/";
 const getToken = () => localStorage.getItem("token");
 
 const axiosClient = axios.create({
   baseURL: baseUrl,
-  paramsSerializer: (params) => queryString.stringify({ params }),
+  /* Converting the params to a query string. */
+  paramsSerializer: {
+    encode: queryString.parse,
+    serialize: queryString.stringify,
+  },
 });
 
 axiosClient.interceptors.request.use(async (config) => {
@@ -15,21 +18,21 @@ axiosClient.interceptors.request.use(async (config) => {
     ...config,
     headers: {
       "Content-Type": "application/json",
-      authorization: `Bearer ${getToken}`,
+      authorization: `Bearer ${getToken()}`,
     },
   };
 });
 
-axiosClient.interceptors.request.use(
+axiosClient.interceptors.response.use(
   (response) => {
     if (response && response.data) return response.data;
     return response;
   },
-  (error) => {
-    if (!error.reponse) {
-      return alert(error);
+  (err) => {
+    if (!err.response) {
+      return alert(err);
     }
-    throw error.response;
+    throw err.response;
   }
 );
 

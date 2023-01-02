@@ -1,17 +1,18 @@
 const User = require("./../models/user.schema");
-const CryptoJS = require("crypto-js");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const config = require("./../config");
 
 exports.register = async (req, res) => {
   const { username, password } = req.body;
   try {
-    req.body.password = CryptoJS.AES.encrypt(
-      password,
-      config.PASSWORD_SECRET_KEY
-    );
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({ username, password });
+    const user = await User.create({
+      username: username,
+      password: hashedPassword,
+    });
 
     const token = jwt.sign({ id: user._id }, config.JWT_SECRET, {
       expiresIn: "30d",
@@ -27,7 +28,7 @@ exports.login = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username: username });
+    const user = await User.findOne({ username: username }).select("+password");
     if (!user) {
       return res.status(401).json({
         errors: [
@@ -38,12 +39,11 @@ exports.login = async (req, res) => {
         ],
       });
     }
-    const decryptedPass = CryptoJS.AES.decrypt(
-      user.password,
-      process.env.PASSWORD_SECRET_KEY
-    ).toString(CryptoJS.enc.Utf8);
 
-    if (decryptedPass !== password) {
+    console.log(user, password);
+    const checkPassword = await bcrypt.compare(user.password, password);
+
+    if (checkPassword) {
       return res.status(401).json({
         errors: [
           {
@@ -56,14 +56,13 @@ exports.login = async (req, res) => {
 
     user.password = undefined;
 
-    const token = jsonwebtoken.sign(
-      { id: user._id },
-      process.env.TOKEN_SECRET_KEY,
-      { expiresIn: "24h" }
-    );
+    const token = jwt.sign({ id: user._id }, config.JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
     res.status(200).json({ user, token });
   } catch (error) {
+    console.log(error);
     res.status(500).json(error);
   }
 };

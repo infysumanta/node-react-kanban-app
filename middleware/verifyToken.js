@@ -18,7 +18,7 @@ const tokenDecode = (req) => {
   if (bearerHeader) {
     const bearer = bearerHeader.split(" ")[1];
     try {
-      const tokenDecoded = jsonwebtoken.verify(bearer, config.JWT_SECRET);
+      const tokenDecoded = jwt.verify(bearer, config.JWT_SECRET);
       return tokenDecoded;
     } catch {
       return false;
