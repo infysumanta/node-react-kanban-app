@@ -15,19 +15,21 @@ import StarBorderOutlinedIcon from "@mui/icons-material/StarBorderOutlined";
 import StarOutlinedIcon from "@mui/icons-material/StarOutlined";
 import EmojiPicker from "../components/common/EmojiPicker";
 import { setBoards } from "../redux/features/boardSlice";
+import { setFavouriteList } from "../redux/features/favouriteSlice";
 let timer;
 const timeout = 500;
 
 const Board = () => {
   const { boardId } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sections, setSections] = useState([]);
   const [isFavourite, setIsFavourite] = useState(false);
   const [icon, setIcon] = useState("");
   const boards = useSelector((state) => state.board.value);
-
+  const favouriteList = useSelector((state) => state.favourites.value);
   useEffect(() => {
     const getBoard = async () => {
       try {
@@ -48,6 +50,15 @@ const Board = () => {
     let temp = [...boards];
     const index = temp.findIndex((e) => e.id === boardId);
     temp[index] = { ...temp[index], icon: newIcon };
+    if (isFavourite) {
+      let tempFavourite = [...favouriteList];
+      const favouriteIndex = tempFavourite.findIndex((e) => e.id === boardId);
+      tempFavourite[favouriteIndex] = {
+        ...tempFavourite[favouriteIndex],
+        icon: newIcon,
+      };
+      dispatch(setFavouriteList(tempFavourite));
+    }
 
     setIcon(newIcon);
     dispatch(setBoards(temp));
@@ -58,8 +69,40 @@ const Board = () => {
     }
   };
 
-  const addFavourite = () => {};
-  const deleteBoard = () => {};
+  const addFavourite = async () => {
+    try {
+      const board = await boardApi.update(boardId, { favourite: !isFavourite });
+      let newFavouriteList = [...favouriteList];
+      if (isFavourite) {
+        newFavouriteList = newFavouriteList.filter((e) => e.id !== boardId);
+      } else {
+        newFavouriteList.unshift(board);
+      }
+      dispatch(setFavouriteList(newFavouriteList));
+      setIsFavourite(!isFavourite);
+    } catch (err) {
+      alert(err);
+    }
+  };
+  const deleteBoard = async () => {
+    try {
+      await boardApi.delete(boardId);
+      if (isFavourite) {
+        const newFavouriteList = favouriteList.filter((e) => e.id !== boardId);
+        dispatch(setFavouriteList(newFavouriteList));
+      }
+
+      const newList = boards.filter((e) => e.id !== boardId);
+      if (newList.length === 0) {
+        navigate("/boards");
+      } else {
+        navigate(`/boards/${newList[0].id}`);
+      }
+      dispatch(setBoards(newList));
+    } catch (err) {
+      alert(err);
+    }
+  };
 
   const updateTitle = async (e) => {
     clearTimeout(timer);
@@ -68,6 +111,15 @@ const Board = () => {
     let temp = [...boards];
     const index = temp.findIndex((e) => e.id === boardId);
     temp[index] = { ...temp[index], title: newTitle };
+    if (isFavourite) {
+      let tempFavourite = [...favouriteList];
+      const favouriteIndex = tempFavourite.findIndex((e) => e.id === boardId);
+      tempFavourite[favouriteIndex] = {
+        ...tempFavourite[favouriteIndex],
+        title: newTitle,
+      };
+      dispatch(setFavouriteList(tempFavourite));
+    }
     dispatch(setBoards(temp));
 
     timer = setTimeout(async () => {

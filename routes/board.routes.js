@@ -7,6 +7,9 @@ const {
   updatePosition,
   getOne,
   update,
+  getFavourites,
+  updateFavouritePosition,
+  deleteBoard,
 } = require("../controllers/board.controller");
 const { verifyToken } = require("../middleware/verifyToken");
 
@@ -17,6 +20,10 @@ router
   .post(verifyToken, create)
   .get(verifyToken, getAll)
   .put(verifyToken, updatePosition);
+router
+  .route("/favourites")
+  .get(verifyToken, getFavourites)
+  .put(verifyToken, updateFavouritePosition);
 
 router
   .route("/:boardId")
@@ -43,6 +50,18 @@ router
     validate,
     verifyToken,
     update
+  )
+  .delete(
+    param("boardId").custom((value) => {
+      if (!isObjectId(value)) {
+        return Promise.reject("Invalid Id");
+      } else {
+        return Promise.resolve();
+      }
+    }),
+    validate,
+    verifyToken,
+    deleteBoard
   );
 
 module.exports = router;
