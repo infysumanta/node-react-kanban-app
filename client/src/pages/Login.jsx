@@ -60,8 +60,7 @@ const Login = () => {
         required
         fullWidth
         id="username"
-        label="Usernme"
-        value="sumantablog"
+        label="Username"
         name="username"
         disabled={loading}
       />
@@ -73,7 +72,6 @@ const Login = () => {
         type="password"
         label="Password"
         name="password"
-        value="Sumanta@1998"
         error={usernameErrText !== ""}
         helperText={usernameErrText}
         disabled={loading}
